@@ -463,7 +463,7 @@ def test_make_file_info1():
 @pytest.mark.unit
 def test_make_file_info2():
     file_info = py7zr.py7zr.SevenZipFile._make_file_info(pathlib.Path(os.path.join(testdata_path, 'src')))
-    assert file_info.get('filename') == os.path.join(testdata_path, 'src')
+    assert file_info.get('filename') == str(pathlib.Path(testdata_path, 'src').as_posix())
     assert file_info.get('emptystream')
     flag = stat.FILE_ATTRIBUTE_DIRECTORY
     assert file_info.get('attributes') & flag == flag
