@@ -17,6 +17,7 @@ import py7zr.compression
 import py7zr.helpers
 import py7zr.properties
 from py7zr import SevenZipFile, pack_7zarchive
+from py7zr.py7zr import FILE_ATTRIBUTE_UNIX_EXTENSION
 
 from . import ltime
 
@@ -377,6 +378,10 @@ def test_compress_symlink(tmp_path):
     assert archive.header.files_info.files[5]['maxsize'] == 1543
     assert archive.header.main_streams.packinfo.packsizes == [1543]
     assert archive.header.files_info.files[4]['uncompressed'] == 6536
+    assert archive.header.files_info.files[1]['filename'] == 'lib/libabc.so'
+    assert archive.header.files_info.files[2]['filename'] == 'lib/libabc.so.1'
+    assert archive.header.files_info.files[2]['attributes'] & FILE_ATTRIBUTE_UNIX_EXTENSION == FILE_ATTRIBUTE_UNIX_EXTENSION
+    assert archive.header.files_info.files[2]['attributes'] & stat.FILE_ATTRIBUTE_REPARSE_POINT == stat.FILE_ATTRIBUTE_REPARSE_POINT
     assert archive.header.main_streams.packinfo.numstreams == 1
     assert archive.header.main_streams.substreamsinfo.digestsdefined == [True, True, True, True, True]
     assert archive.header.main_streams.substreamsinfo.unpacksizes == [11, 13, 15, 6536, 3]

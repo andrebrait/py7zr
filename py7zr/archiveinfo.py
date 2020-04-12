@@ -25,6 +25,7 @@
 import functools
 import io
 import os
+import pathlib
 import struct
 from binascii import unhexlify
 from functools import reduce
@@ -736,7 +737,7 @@ class FilesInfo:
 
     def _read_name(self, buffer: BinaryIO) -> None:
         for f in self.files:
-            f['filename'] = read_utf16(buffer)
+            f['filename'] = str(pathlib.Path(read_utf16(buffer)).as_posix())
 
     def _read_attributes(self, buffer: BinaryIO, defined: List[bool]) -> None:
         for idx, f in enumerate(self.files):
