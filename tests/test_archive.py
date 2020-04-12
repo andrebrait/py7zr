@@ -474,3 +474,63 @@ def test_compress_directories(tmp_path):
 def test_compress_files_with_password(tmp_path):
     target = tmp_path.joinpath('target.7z')
     archive = py7zr.SevenZipFile(target, mode='w', password='secret')
+
+@pytest.mark.files
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires python3.7 or higher")
+@pytest.mark.skipif(not sys.platform.startswith("win") or (ctypes.windll.shell32.IsUserAnAdmin() == 0),
+                    reason="Administrator rights is required to make symlink on windows")
+def test_compress_windows_links(tmp_path):
+    # test case derived by github issue#112
+    parent_path = tmp_path.joinpath('symb')
+    target = tmp_path / "symb_2.7z"
+    # prepare test data
+    parent_path.mkdir()
+    with parent_path.joinpath("Original1.txt").open('w') as f:
+        f.write("real Original1.txt")
+    s = parent_path / "rel/path/link_to_Original1.txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "Original1.txt", False)
+    s = parent_path / "rel/path/link_to_link_Original1.txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "rel/path/link_to_Original1.txt", False)
+    s = parent_path / "rel/path/link_to_link_to_link_Original1.txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
+    s = parent_path / "rel/link_to_link_to_link_Original1.txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
+    s = parent_path / "a/rel64"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path /  "rel", True)
+    s = parent_path / "lib/Original2.txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    with parent_path.joinpath("lib/Original2.txt").open('w') as f:
+        f.write("real Original2.txt")
+    s = parent_path / "lib/Original2.[1.2.3].txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "lib/Original2.txt", False)
+    s = parent_path / "lib/Original2.[1.2].txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "lib/Original2.[1.2.3].txt", False)
+    s = parent_path / "lib/Original2.[1].txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(parent_path / "lib/Original2.[1.2].txt", False)
+    s = parent_path / "lib64"
+    s.symlink_to(parent_path / "lib", True)
+    s = pathlib.Path(os.path.join(parent_path.drive, "Original3.txt"))
+    s.parent.mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(parent_path.drive, "Original3.txt"), 'w') as f:
+        f.write("real Original3.txt")
+    s = parent_path / "Original3.[1].txt"
+    s.parent.mkdir(parents=True, exist_ok=True)
+    s.symlink_to(os.path.join(parent_path.drive, "Original3.txt"), False)
+    # create archive
+    os.chdir(parent_path)
+    archive = py7zr.SevenZipFile(target, 'w')
+    archive.writeall('', '')
+    archive._write_archive()
+    archive._fpclose()
+    # split archive.close() into _write_archive() and _fpclose()
+    reader = py7zr.SevenZipFile(target, 'r')
+    reader.extractall(path=tmp_path.joinpath('tgt'))
+    reader.close()
