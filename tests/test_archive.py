@@ -535,13 +535,15 @@ def test_compress_windows_links(tmp_path):
     archive = py7zr.SevenZipFile(target, 'w')
     archive.writeall('', '')
     archive._write_archive()
-    assert archive.header.files_info.files[0]['filename'] == 'Original1.txt'
-    assert archive.header.files_info.files[1]['filename'] == 'rel/path/link_to_Original1.txt'
-    assert check_bit(archive.header.files_info.files[1]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
-    assert archive.header.files_info.files[2]['filename'] == 'rel/path/link_to_link_to_Original1.txt'
-    assert check_bit(archive.header.files_info.files[2]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
-    assert archive.header.files_info.files[3]['filename'] == 'rel/path/link_to_link_to_link_to_Original1.txt'
+    assert archive.header.files_info.files[0]['filename'] in ['Original1.txt', 'Original3.[1].txt', 'Original3.txt']
+    assert archive.header.files_info.files[1]['filename'] in ['Original1.txt', 'Original3.[1].txt', 'Original3.txt']
+    assert archive.header.files_info.files[2]['filename'] in ['Original1.txt', 'Original3.[1].txt', 'Original3.txt']
+    assert archive.header.files_info.files[3]['filename'] == 'rel/path/link_to_Original1.txt'
     assert check_bit(archive.header.files_info.files[3]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    assert archive.header.files_info.files[4]['filename'] == 'rel/path/link_to_link_to_Original1.txt'
+    assert check_bit(archive.header.files_info.files[4]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    assert archive.header.files_info.files[5]['filename'] == 'rel/path/link_to_link_to_link_to_Original1.txt'
+    assert check_bit(archive.header.files_info.files[5]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
     archive._fpclose()
     # split archive.close() into _write_archive() and _fpclose()
     reader = py7zr.SevenZipFile(target, 'r')
