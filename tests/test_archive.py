@@ -533,6 +533,9 @@ def test_compress_windows_links(tmp_path):
     os.chdir(parent_path)
     archive = py7zr.SevenZipFile(target, 'w')
     archive.writeall('', '')
+    assert archive.header.files_info.files[0]['filename'] == 'rel/path/link_to_Original1.txt'
+    assert archive.header.files_info.files[1]['filename'] == 'rel/path/link_to_Original1.txt'
+    assert archive.header.files_info.files[2]['filename'] == 'rel/path/link_to_Original1.txt'
     archive._write_archive()
     archive._fpclose()
     # split archive.close() into _write_archive() and _fpclose()
