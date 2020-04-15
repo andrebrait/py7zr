@@ -24,6 +24,10 @@ from . import ltime
 testdata_path = os.path.join(os.path.dirname(__file__), 'data')
 
 
+def check_bit(val, mask):
+    return val & mask == mask
+
+
 @pytest.mark.unit
 def test_simple_compress_and_decompress():
     sevenzip_compressor = py7zr.compression.SevenZipCompressor()
@@ -381,9 +385,9 @@ def test_compress_symlink(tmp_path):
     assert archive.header.files_info.files[1]['filename'] == 'lib/libabc.so'
     assert archive.header.files_info.files[2]['filename'] == 'lib/libabc.so.1'
     if os.name == 'nt':
-        assert archive.header.files_info.files[2]['attributes'] & stat.FILE_ATTRIBUTE_REPARSE_POINT == stat.FILE_ATTRIBUTE_REPARSE_POINT
+        assert check_bit(archive.header.files_info.files[2]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
     else:
-        assert archive.header.files_info.files[2]['attributes'] & FILE_ATTRIBUTE_UNIX_EXTENSION == FILE_ATTRIBUTE_UNIX_EXTENSION
+        assert check_bit(archive.header.files_info.files[2]['attributes'], FILE_ATTRIBUTE_UNIX_EXTENSION)
         assert stat.S_ISLNK(archive.header.files_info.files[2]['attributes'] >> 16)
     assert archive.header.main_streams.packinfo.numstreams == 1
     assert archive.header.main_streams.substreamsinfo.digestsdefined == [True, True, True, True, True]
@@ -475,6 +479,7 @@ def test_compress_files_with_password(tmp_path):
     target = tmp_path.joinpath('target.7z')
     archive = py7zr.SevenZipFile(target, mode='w', password='secret')
 
+
 @pytest.mark.files
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="requires python3.7 or higher")
 @pytest.mark.skipif(not sys.platform.startswith("win") or (ctypes.windll.shell32.IsUserAnAdmin() == 0),
@@ -501,7 +506,7 @@ def test_compress_windows_links(tmp_path):
     s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
     s = parent_path / "a/rel64"
     s.parent.mkdir(parents=True, exist_ok=True)
-    s.symlink_to(parent_path /  "rel", True)
+    s.symlink_to(parent_path / "rel", True)
     s = parent_path / "lib/Original2.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     with parent_path.joinpath("lib/Original2.txt").open('w') as f:
