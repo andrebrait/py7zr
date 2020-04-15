@@ -18,6 +18,7 @@ import py7zr.helpers
 import py7zr.properties
 from py7zr import SevenZipFile, pack_7zarchive
 from py7zr.py7zr import FILE_ATTRIBUTE_UNIX_EXTENSION
+from py7zr.helpers import readlink
 
 from . import ltime
 
@@ -533,12 +534,14 @@ def test_compress_windows_links(tmp_path):
     os.chdir(parent_path)
     archive = py7zr.SevenZipFile(target, 'w')
     archive.writeall('', '')
-    assert archive.header.files_info.files[0]['filename'] == 'rel/path/link_to_Original1.txt'
-    assert archive.header.files_info.files[1]['filename'] == 'rel/path/link_to_Original1.txt'
-    assert archive.header.files_info.files[2]['filename'] == 'rel/path/link_to_Original1.txt'
     archive._write_archive()
+    assert archive.header.files_info.files[0]['filename'] == 'rel/path/link_to_Original1.txt'
+    assert archive.header.files_info.files[1]['filename'] == 'rel/path/link_to_link_to_Original1.txt'
+    assert archive.header.files_info.files[2]['filename'] == 'rel/path/link_to_link_to_link_to_Original1.txt'
     archive._fpclose()
     # split archive.close() into _write_archive() and _fpclose()
     reader = py7zr.SevenZipFile(target, 'r')
     reader.extractall(path=tmp_path.joinpath('tgt'))
     reader.close()
+    assert readlink(str(tmp_path.joinpath('tgt/rel/path/link_to_Original.txt'))) == '../../Original1.txt'
+    assert readlink(str(tmp_path.joinpath('tgt/rel/path/link_to_link_to_Original.txt'))) == 'link_to_Original1.txt'
