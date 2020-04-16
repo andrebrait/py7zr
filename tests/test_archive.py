@@ -516,33 +516,34 @@ def test_compress_windows_links(tmp_path):
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
     l.append('rel/link_to_link_to_link_Original1.txt')
-    # 5
+    # 5, 6
     s = parent_path / "a/rel64"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel", True)
+    l.append('a')
     l.append('a/rel64')
-    # 6 create file
+    # 7 create file
     s = parent_path / "lib/Original2.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     with parent_path.joinpath("lib/Original2.txt").open('w') as f:
         f.write("real Original2.txt")
     l.append('lib/Original2.txt')
-    # 7
+    # 8
     s = parent_path / "lib/Original2.[1.2.3].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.txt", False)
     l.append('lib/Original2.[1.2.3].txt')
-    # 8
+    # 9
     s = parent_path / "lib/Original2.[1.2].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.[1.2.3].txt", False)
     l.append('lib/Original2.[1.2].txt')
-    # 9
+    # 10
     s = parent_path / "lib/Original2.[1].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.[1.2].txt", False)
     l.append('lib/Original2.[1].txt')
-    # 10
+    # 11
     s = parent_path / "lib64"
     s.symlink_to(parent_path / "lib", True)
     l.append('lib64')
@@ -551,7 +552,7 @@ def test_compress_windows_links(tmp_path):
     s.parent.mkdir(parents=True, exist_ok=True)
     with open(os.path.join(parent_path.drive, "Original3.txt"), 'w') as f:
         f.write("real Original3.txt")
-    # 11
+    # 12
     s = parent_path / "Original3.[1].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(os.path.join(parent_path.drive, "Original3.txt"), False)
@@ -565,7 +566,7 @@ def test_compress_windows_links(tmp_path):
     # asserts
     for i, f in enumerate(l):
         assert archive.header.files_info.files[i]['filename'] == f
-        if i == 0 or i == 6:
+        if i in [0, 5, 6]:
             continue
         assert check_bit(archive.header.files_info.files[i]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
     #
