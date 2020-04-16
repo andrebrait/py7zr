@@ -490,60 +490,85 @@ def test_compress_windows_links(tmp_path):
     parent_path = tmp_path.joinpath('symb')
     target = tmp_path / "symb_2.7z"
     # prepare test data
+    l = []
     parent_path.mkdir()
+    # 0
     with parent_path.joinpath("Original1.txt").open('w') as f:
         f.write("real Original1.txt")
+    l.append('Original1.txt')
+    # 1
     s = parent_path / "rel/path/link_to_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "Original1.txt", False)
+    l.append('rel/path/link_to_Original1.txt')
+    # 2
     s = parent_path / "rel/path/link_to_link_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_Original1.txt", False)
+    l.append('rel/path/link_to_link_Original1.txt')
+    # 3
     s = parent_path / "rel/path/link_to_link_to_link_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
+    l.append('rel/path/link_to_link_to_link_Original1.txt')
+    # 4
     s = parent_path / "rel/link_to_link_to_link_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
+    l.append('rel/link_to_link_to_link_Original1.txt')
+    # 5
     s = parent_path / "a/rel64"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel", True)
+    l.append('a/rel64')
+    # 6 create file
     s = parent_path / "lib/Original2.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     with parent_path.joinpath("lib/Original2.txt").open('w') as f:
         f.write("real Original2.txt")
+    l.append('lib/Original2.txt')
+    # 7
     s = parent_path / "lib/Original2.[1.2.3].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.txt", False)
+    l.append('lib/Original2.[1.2.3].txt')
+    # 8
     s = parent_path / "lib/Original2.[1.2].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.[1.2.3].txt", False)
+    l.append('lib/Original2.[1.2].txt')
+    # 9
     s = parent_path / "lib/Original2.[1].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.[1.2].txt", False)
+    l.append('lib/Original2.[1].txt')
+    # 10
     s = parent_path / "lib64"
     s.symlink_to(parent_path / "lib", True)
+    l.append('lib64')
+    # out of tree
     s = pathlib.Path(os.path.join(parent_path.drive, "Original3.txt"))
     s.parent.mkdir(parents=True, exist_ok=True)
     with open(os.path.join(parent_path.drive, "Original3.txt"), 'w') as f:
         f.write("real Original3.txt")
+    # 11
     s = parent_path / "Original3.[1].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(os.path.join(parent_path.drive, "Original3.txt"), False)
+    l.append('Original3.[1].txt')
     # create archive
     os.chdir(parent_path)
     archive = py7zr.SevenZipFile(target, 'w')
-    archive.writeall('', '')
+    for f in l:
+        archive.write(f)
     archive._write_archive()
-    assert archive.header.files_info.files[0]['filename'] in ['Original1.txt', 'Original3.[1].txt', 'Original3.txt']
-    assert archive.header.files_info.files[1]['filename'] in ['Original1.txt', 'Original3.[1].txt', 'Original3.txt']
-    assert archive.header.files_info.files[2]['filename'] in ['Original1.txt', 'Original3.[1].txt', 'Original3.txt']
-    assert archive.header.files_info.files[3]['filename'] == 'rel/path/link_to_Original1.txt'
-    assert check_bit(archive.header.files_info.files[3]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
-    assert archive.header.files_info.files[4]['filename'] == 'rel/path/link_to_link_to_Original1.txt'
-    assert check_bit(archive.header.files_info.files[4]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
-    assert archive.header.files_info.files[5]['filename'] == 'rel/path/link_to_link_to_link_to_Original1.txt'
-    assert check_bit(archive.header.files_info.files[5]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    # asserts
+    for i, f in enumerate(l):
+        assert archive.header.files_info.files[i]['filename'] == f
+        if i == 0 or i == 6:
+            continue
+        assert check_bit(archive.header.files_info.files[i]['attributes'], stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    #
     archive._fpclose()
     # split archive.close() into _write_archive() and _fpclose()
     reader = py7zr.SevenZipFile(target, 'r')
