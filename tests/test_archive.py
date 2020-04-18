@@ -578,5 +578,5 @@ def test_compress_windows_links(tmp_path):
     reader = py7zr.SevenZipFile(target, 'r')
     reader.extractall(path=tmp_path.joinpath('tgt'))
     reader.close()
-    assert readlink(str(tmp_path / 'tgt' / file_list[3])) == file_list[1]
+    assert readlink(str(tmp_path / 'tgt' / file_list[3])) == file_list[0]
     assert readlink(str(tmp_path / 'tgt' / file_list[4])) == file_list[3]
