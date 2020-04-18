@@ -490,66 +490,66 @@ def test_compress_windows_links(tmp_path):
     parent_path = tmp_path.joinpath('symb')
     target = tmp_path / "symb_2.7z"
     # prepare test data
-    l = []
+    file_list = []
     parent_path.mkdir()
     # 0
     with parent_path.joinpath("Original1.txt").open('w') as f:
         f.write("real Original1.txt")
-    l.append('Original1.txt')
+    file_list .append('Original1.txt')
     # 1, 2, 3
     s = parent_path / "rel/path/link_to_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "Original1.txt", False)
-    l.append('rel')
-    l.append('rel/path')
-    l.append('rel/path/link_to_Original1.txt')
+    file_list .append('rel')
+    file_list .append('rel/path')
+    file_list .append('rel/path/link_to_Original1.txt')
     # 4
     s = parent_path / "rel/path/link_to_link_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_Original1.txt", False)
-    l.append('rel/path/link_to_link_Original1.txt')
+    file_list .append('rel/path/link_to_link_Original1.txt')
     # 5
     s = parent_path / "rel/path/link_to_link_to_link_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
-    l.append('rel/path/link_to_link_to_link_Original1.txt')
+    file_list .append('rel/path/link_to_link_to_link_Original1.txt')
     # 6
     s = parent_path / "rel/link_to_link_to_link_Original1.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel/path/link_to_link_Original1.txt", False)
-    l.append('rel/link_to_link_to_link_Original1.txt')
+    file_list .append('rel/link_to_link_to_link_Original1.txt')
     # 7, 8
     s = parent_path / "a/rel64"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "rel", True)
-    l.append('a')
-    l.append('a/rel64')
+    file_list .append('a')
+    file_list .append('a/rel64')
     # 9, 10 create file
     s = parent_path / "lib/Original2.txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     with parent_path.joinpath("lib/Original2.txt").open('w') as f:
         f.write("real Original2.txt")
-    l.append('lib')
-    l.append('lib/Original2.txt')
+    file_list .append('lib')
+    file_list .append('lib/Original2.txt')
     # 11
     s = parent_path / "lib/Original2.[1.2.3].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.txt", False)
-    l.append('lib/Original2.[1.2.3].txt')
+    file_list .append('lib/Original2.[1.2.3].txt')
     # 12
     s = parent_path / "lib/Original2.[1.2].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.[1.2.3].txt", False)
-    l.append('lib/Original2.[1.2].txt')
+    file_list .append('lib/Original2.[1.2].txt')
     # 13
     s = parent_path / "lib/Original2.[1].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(parent_path / "lib/Original2.[1.2].txt", False)
-    l.append('lib/Original2.[1].txt')
+    file_list .append('lib/Original2.[1].txt')
     # 14
     s = parent_path / "lib64"
     s.symlink_to(parent_path / "lib", True)
-    l.append('lib64')
+    file_list .append('lib64')
     # out of tree
     s = pathlib.Path(os.path.join(parent_path.drive, "Original3.txt"))
     s.parent.mkdir(parents=True, exist_ok=True)
@@ -559,15 +559,15 @@ def test_compress_windows_links(tmp_path):
     s = parent_path / "Original3.[1].txt"
     s.parent.mkdir(parents=True, exist_ok=True)
     s.symlink_to(os.path.join(parent_path.drive, "Original3.txt"), False)
-    l.append('Original3.[1].txt')
+    file_list .append('Original3.[1].txt')
     # create archive
     os.chdir(parent_path)
     archive = py7zr.SevenZipFile(target, 'w')
-    for f in l:
+    for f in file_list :
         archive.write(f)
     archive._write_archive()
     # asserts
-    for i, f in enumerate(l):
+    for i, f in enumerate(file_list ):
         assert archive.header.files_info.files[i]['filename'] == f
         if i in [0, 1, 2, 7, 8, 9, 10]:  # skip general files and directories
             continue
@@ -578,5 +578,5 @@ def test_compress_windows_links(tmp_path):
     reader = py7zr.SevenZipFile(target, 'r')
     reader.extractall(path=tmp_path.joinpath('tgt'))
     reader.close()
-    assert readlink(str(tmp_path.joinpath('tgt/rel/path/link_to_Original.txt'))) == '../../Original1.txt'
-    assert readlink(str(tmp_path.joinpath('tgt/rel/path/link_to_link_to_Original.txt'))) == 'link_to_Original1.txt'
+    assert readlink(str(tmp_path / 'tgt' / file_list[3])) == file_list[1]
+    assert readlink(str(tmp_path / 'tgt' / file_list[4])) == file_list[3]
