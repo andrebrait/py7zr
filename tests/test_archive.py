@@ -563,11 +563,11 @@ def test_compress_windows_links(tmp_path):
     # create archive
     os.chdir(parent_path)
     archive = py7zr.SevenZipFile(target, 'w')
-    for f in file_list :
+    for f in file_list:
         archive.write(f)
     archive._write_archive()
     # asserts
-    for i, f in enumerate(file_list ):
+    for i, f in enumerate(file_list):
         assert archive.header.files_info.files[i]['filename'] == f
         if i in [0, 1, 2, 7, 8, 9, 10]:  # skip general files and directories
             continue
